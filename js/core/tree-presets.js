@@ -99,7 +99,9 @@ export function randomTree(n = 7, seed = 1, maxDeg = 3) {
   });
   return {
     game,
-    root: 0,
+    // root at a leaf: every vertex then has at most maxDeg - 1 parents, which keeps the
+    // approximate tables cheap (their cost is exponential in the number of parents)
+    root: nbrs.findIndex((nb) => nb.length === 1),
     layout: null,
     source: `Random tree (n = ${n}, max degree ${maxDeg}, seed ${seed}); every local payoff i.i.d. Uniform[0,1].`,
   };

@@ -40,7 +40,7 @@ function renderControls() {
     select("preset", "Game", Object.entries(PRESETS).map(([k, p]) => [k, p.label]), state.preset, (v) => { state.preset = v; state.root = null; rebuild(); }),
     state.preset === "random" ? number("rn", "Players n", state.n, { min: 2, max: 10, step: 1 }, (v) => { state.n = Math.max(2, Math.min(10, Math.round(v))); state.root = null; rebuild(); }) : null,
     state.preset === "random" ? number("rs", "Seed", state.seed, { min: 0, step: 1 }, (v) => { state.seed = Math.round(v); state.root = null; rebuild(); }) : null,
-    select("mode", "Variant", [["pure", "Pure strategies (exact, grid {0,1})"], ["approx", "ApproximateTreeNash (τ-grid, ε-best responses)"]], state.mode, (v) => { state.mode = v; rebuild(); }),
+    select("mode", "Variant", [["pure", "Pure-strategy TreeNash (grid {0,1}, ε = 0)"], ["approx", "ApproximateTreeNash (τ-grid, ε-best responses)"]], state.mode, (v) => { state.mode = v; rebuild(); }),
     state.mode === "approx" ? number("eps", "ε", state.eps, { min: 0.01, max: 1, step: 0.01 }, (v) => { state.eps = Math.min(1, Math.max(0.01, v)); rebuild(); }) : null,
     state.mode === "approx" ? select("taumode", "Grid τ = 1/N", [["ortiz", "From Ortiz (2002) bound"], ["manual", "Manual N"]], state.tauMode, (v) => { state.tauMode = v; rebuild(); }) : null,
     state.mode === "approx" && state.tauMode === "manual" ? number("mn", "N", state.manualN, { min: 1, max: 80, step: 1 }, (v) => { state.manualN = Math.max(1, Math.min(80, Math.round(v))); rebuild(); }) : null,
@@ -78,7 +78,7 @@ function rebuild() {
   state.epsUsed = eps;
   state.result = null;
   if (work > MAX_WORK) {
-    state.error = `This grid would need roughly ${work.toExponential(1)} elementary operations, which is too slow for a browser demo. Lower N, raise ε, or pick a tree with fewer parents per vertex.`;
+    state.error = `This grid would need roughly ${work.toExponential(1)} elementary operations, which is too slow for a browser demo. The cost grows like (N + 1)^(parents + 1) at each vertex, so try rooting the tree at a leaf (every vertex then has at most degree − 1 parents), lowering N, or raising ε.`;
   } else {
     const t0 = performance.now();
     state.result = treeNashTables(state.game, { root: state.root, N, eps });
@@ -97,7 +97,8 @@ function renderBounds() {
   const k = g.maxK();
   if (state.mode === "pure") {
     out.append(h("p", { class: "small muted" },
-      `Pure variant: strategies restricted to {0, 1} and exact best responses (N = 1, ε = 0). Max neighbourhood size k = ${k} (including the player); payoffs in [${fmt(lo)}, ${fmt(hi)}].`));
+      `Pure variant: strategies restricted to {0, 1} and exact best responses (N = 1, ε = 0). Max neighbourhood size k = ${k} (including the player); payoffs in [${fmt(lo)}, ${fmt(hi)}].`),
+      h("p", { class: "small muted" }, "This is cheap because each table has only 2 × 2 entries and each vertex checks at most 2^(parents) witness combinations. It is not KLS's exact algorithm for mixed equilibria (§6, unions of rectangles), which can take time exponential in n and is not implemented here. ApproximateTreeNash is more expensive than this pure variant because it searches (N + 1) grid points per player instead of 2."));
   } else {
     const tk = klsTau(state.eps, k), to = ortizTau(state.eps, k), tau = 1 / state.N;
     const guaranteed = tau <= to + 1e-12;
