@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphical Games Companion</title>
+<meta name="description" content="Interactive demonstrations of TreeNash (Kearns, Littman & Singh 2001) and influence games (Irfan & Ortiz 2011), with stated assumptions and verification.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%230f6e6a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Graphical games: two interactive companions</h1>
+  <p class="lede">Small, inspectable implementations of the two papers covered in a CS6208 Advanced Topics in AI group project presentation. Each demo runs entirely in the browser, labels every modelling choice as coming either from the paper or from us, and is backed by an automated test suite.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0"><a href="treenash.html">Demo 1 · TreeNash</a></h3>
+      <p class="cite">M. Kearns, M. L. Littman, S. Singh. Graphical Models for Game Theory. <em>UAI 2001</em>, 253–260.</p>
+      <ul class="small">
+        <li>Step through the downstream (table) and upstream (witness) passes on tree games.</li>
+        <li>Exact pure-strategy TreeNash, cross-checked against brute force.</li>
+        <li>ApproximateTreeNash on a τ-grid with ε-best responses. The heat maps show tables like KLS Fig. 2. Grid size comes from KLS Thm 5 or Ortiz's refinement, and the exact regret of the output is shown.</li>
+        <li>Matching pennies shows the gap between pure and mixed equilibria.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0"><a href="influence.html">Demo 2 · Influence games</a></h3>
+      <p class="cite">M. T. Irfan, L. E. Ortiz. A Game-Theoretic Approach to Influence in Networks. <em>AAAI 2011</em>, 688–694.</p>
+      <ul class="small">
+        <li>Build linear influence games, or load IO Fig. 1 or random / preferential-attachment instances.</li>
+        <li>Enumerate PSNE by brute force or with IO's pruned backtracking.</li>
+        <li>Choose <em>S</em> by hand, run IO's greedy step by step, or compute all optimal sets.</li>
+        <li>Theorem 4 dynamics, the Proposition 5 potential, the Theorem 7 O(<em>nd</em>) tree tables, and the Theorem 8(3) #KNAPSACK star.</li>
+        <li>A small replication of the random-LIG experiment.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 id="conventions">Conventions (the two papers differ)</h2>
+  <div class="scroll"><table>
+    <thead><tr><th></th><th>Kearns, Littman &amp; Singh 2001</th><th>Irfan &amp; Ortiz 2011</th></tr></thead>
+    <tbody>
+      <tr><td>Actions</td><td>{0, 1}</td><td>{−1, +1} (the hardness proofs use {0, 1})</td></tr>
+      <tr><td>Graph</td><td>undirected tree; <em>N<sub>G</sub></em>(<em>i</em>) includes <em>i</em></td><td>directed, weighted; arc <em>j</em> → <em>i</em> iff <em>w<sub>ji</sub></em> ≠ 0</td></tr>
+      <tr><td>Payoffs</td><td>arbitrary local matrices, |payoff| ≤ 1 (KLS footnote 3)</td><td><em>u<sub>i</sub></em> = <em>x<sub>i</sub></em>(Σ<em>w<sub>ji</sub>x<sub>j</sub></em> − <em>b<sub>i</sub></em>)</td></tr>
+      <tr><td>Solution concept</td><td>(ε-)Nash in mixed strategies; <em>p<sub>i</sub></em> = Pr[action 0]</td><td>pure-strategy Nash equilibria</td></tr>
+      <tr><td>“Parent” / “child”</td><td>parent = upstream (away from root), child = downstream (towards root)</td><td>same, in the proof of Thm 7</td></tr>
+      <tr><td>Player numbering on this site</td><td colspan="2">1-based in the UI, as in the papers' figures</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="verification">Verification</h2>
+  <p>Run <code>node tests/run-tests.mjs</code> (Node ≥ 18, no dependencies). It checks that:</p>
+  <ul>
+    <li><strong>KLS:</strong> pure TreeNash enumerates exactly the brute-force PSNE set on Irfan's slide example and on 120 random tree/root combinations (the pure-strategy analogue of KLS Thm 1, as in Irfan's slides). Every ApproximateTreeNash output on an Ortiz grid is an ε-NE by exact regret (90 cases). The τ formulas evaluate as stated.</li>
+    <li><strong>Irfan's slides:</strong> our tables and witness lists for the threshold game of complements match pp. 7–9 of the slide PDF (two slides per page), apart from one root entry we believe is a typo (explained on the Demo 1 page).</li>
+    <li><strong>IO:</strong>
+      <ul>
+        <li>Fig. 1 has exactly the six PSNE drawn in Fig. 1(b). {1,2,3} leaves two consistent PSNE and {1,6} leaves one.</li>
+        <li>On the Fig. 2 hypergraph, greedy yields {1,6}.</li>
+        <li>Backtracking with IO's pruning matches brute force on 260 random and preferential-attachment LIGs.</li>
+        <li>Greedy and exact sets always pin down the target.</li>
+        <li>The Thm 7 tables agree with generic TreeNash on 300 random tree LIGs.</li>
+        <li>The Thm 8(3) star counts equal knapsack counts.</li>
+        <li>The Prop 5 potential is exact.</li>
+      </ul>
+    </li>
+    <li><strong>Our slides:</strong> the examples on slides 60, 61, 62 and 67 are reproduced.</li>
+  </ul>
+
+  <h2 id="remarks">Remarks on the sources</h2>
+  <ul>
+    <li><strong>IO Thm 7 inequality.</strong> The AAAI 2011 proof sketch prints the condition for <em>T<sub>ij</sub></em>(<em>x<sub>i</sub></em>, <em>x<sub>j</sub></em>) = 1 without the threshold <em>b<sub>i</sub></em>. The best-response condition <em>x<sub>i</sub>f<sub>i</sub></em> ≥ 0 requires it. We use <em>x<sub>i</sub></em>(<em>x<sub>j</sub>w<sub>ji</sub></em> + Σ<sub>Pa₁</sub> <em>x̂<sub>k</sub>w<sub>ki</sub></em> − <em>b<sub>i</sub></em>) + Σ<sub>Pa₂</sub>|<em>w<sub>ti</sub></em>| ≥ 0. The test suite shows that the printed form disagrees with exact TreeNash on most random instances with <em>b</em> ≠ 0, while ours always agrees.</li>
+    <li><strong>KLS Thm 5 and Ortiz's refinement.</strong> Ortiz's note (Dec. 2002) proves that a τ-grid with τ ≤ (1+ε)<sup>1/<em>k</em></sup> − 1 contains an ε-NE, with <em>k</em> as below; his proof implicitly uses payoffs in [0,1] (KLS themselves assume |payoff| ≤ 1), and <em>k</em> = |<em>N<sub>G</sub></em>(<em>i</em>)| including <em>i</em>. Hence τ ≤ ε/(2<em>k</em>) is also sufficient for ε ≤ 1, since then (1+ε)<sup>1/<em>k</em></sup> − 1 ≥ ε/(2<em>k</em>); the note prints this last inequality in the opposite direction. Irfan's CSCI 3210 slides quote τ ≤ ε/(4<em>d</em>), with <em>d</em> the maximum degree; for <em>d</em> ≥ 1 that is a stricter condition, so it is also sufficient.</li>
+    <li><strong>KLS Thm 5 is conservative.</strong> It is a sufficient condition; KLS's own Fig. 2 was computed with τ = 0.01 and ε = 0.05, far coarser than the theorem requires.</li>
+    <li><strong>Logarithm base in KLS.</strong> KLS do not state it. Their Lemma 2 proof uses log(<em>k</em>/2) = log <em>k</em> − 1, which implies base 2.</li>
+    <li><strong>Figures not reproduced.</strong> KLS Fig. 2/3 use payoffs that the paper does not give, so our M/O tree has the same shape but our own payoffs. IO's US Senate study needs learned models that we do not have.</li>
+  </ul>
+
+  <h2 id="code">Code provenance</h2>
+  <p>We found no official code release for either paper. We searched GitHub and the authors' pages in October 2026. Two community implementations of pure-strategy TreeNash exist:
+    <a href="https://github.com/axeldavy/PyTreeNash">axeldavy/PyTreeNash</a> (Apache-2.0, a class project) and
+    <a href="https://github.com/kylePellerin/TreeNash">kylePellerin/TreeNash</a> (no licence stated; also contains LIG code). We did not use or verify their code. Everything here was written from the papers and is checked by our own tests.</p>
+  <p>Layout: <code>js/core/</code> holds the algorithms (plain ES modules, no dependencies, importable from Node). <code>js/ui/</code> and <code>js/*-page.js</code> hold the interface. <code>js/experiment-worker.js</code> runs the replication in a background thread.</p>
+
+  <h2 id="references">References</h2>
+  <ol class="refs">
+    <li>M Kearns, ML Littman, and S Singh. 2001. January 2-5). Graphical models for game theory. Proceedings of the Seventeenth Conference on Uncertainty in Artificial Intelligence, Seattle, WA, USA. UAI’01. (2001).</li>
+    <li>Mohammad Irfan and Luis Ortiz. 2011. A game-theoretic approach to influence in networks. In Proceedings of the AAAI Conference on Artificial Intelligence, 688–694.</li>
+    <li>Irfan, M. T., & Ortiz, L. E. (2014). On influence, stable behavior, and the most influential individuals in networks: A game-theoretic approach. Artificial Intelligence, 215, 79–119. https://doi.org/10.1016/j.artint.2014.06.004 (extended version of [2])</li>
+    <li>Luis E Ortiz. Approximation Bound Reﬁnement of KLS. Retrieved from https://www.cis.upenn.edu/~mkearns/teaching/cgt/revised_approx_bnd.pdf </li>
+    <li>Irfan, M. T. (n.d.). CSCI 3210: Computational Game Theory. Retrieved https://tildesites.bowdoin.edu/~mirfan/slides/Prev/2018%20Spring/3210/Graphical%20Games.pdf</li>
+    <li>Littman, M., Kearns, M., & Singh, S. (2001). An efficient, exact algorithm for solving tree-structured graphical games. In T. Dietterich, S. Becker, & Z. Ghahramani (Eds.), Advances in neural information processing systems (Vol. 14). MIT Press. https://proceedings.neurips.cc/paper_files/paper/2001/file/c5866e93cab1776890fe343c9e7063fb-Paper.pdf
+</li>
+    <li>Ortiz, L. E., and Kearns, M. 2002. Nash propagation for
+loopy graphical games. In Neural Information Processing
+Systems (NIPS).</li>
+    <li>Fabrikant, A., View Profile, Papadimitriou, C., View Profile, Talwar, K., & View Profile. (2004). The complexity of pure Nash equilibria. In Proceedings of the thirty-sixth annual ACM symposium on Theory of computing (pp. 604–612). https://doi.org/10.1145/1007352.1007445
+</li>
+    <li>Honorio, J., & Ortiz, L. (2015). Learning the Structure and Parameters of Large-Population Graphical Games from Behavioral Data. Journal of Machine Learning Research, 16(34), 1157–1210.
+</li>
+    <li>Luis Ortiz and Mohammad Irfan. 2017. Tractable Algorithms for Approximate Nash Equilibria in Generalized Graphical Games with Tree Structure. Proceedings of the AAAI Conference on Artificial Intelligence 31, 1 (February 2017). DOI:https://doi.org/10.1609/aaai.v31i1.10602 </li>
+  </ol>
+
+  <h2 id="disclaimer">Disclaimer</h2>
+  <p>This site may be wrong or inaccurate, both in the code and in how it reads the papers, despite the checks listed above. It is provided as is, without any warranty. Use it at your own risk, and rely on the original papers for anything that matters.</p>
+
+  <h2 id="ai">Use of AI</h2>
+  <p>This site's code, tests and explanatory text were produced with the assistance of an AI model (Claude Opus 5.5 by Anthropic, used through Claude Code). The model drafted the implementations from the papers and the course slides, wrote the test suite, and ran the checks listed above. The original papers remain the authoritative source; please cite them rather than this site. Any remaining errors are ours.</p>
+</main>
+<script type="module">
+  import { chrome } from "./js/ui/common.js";
+  chrome("index.html");
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TreeNash Demo</title>
+<meta name="description" content="Interactive TreeNash and ApproximateTreeNash (Kearns, Littman & Singh, UAI 2001) on small tree graphical games.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%230f6e6a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>TreeNash on tree graphical games</h1>
+  <p class="lede">Kearns, Littman &amp; Singh, “Graphical Models for Game Theory”, <em>UAI 2001</em> (KLS below). Step through the downstream and upstream passes on small trees.</p>
+
+  <div class="note">
+    <p><strong>Setting (KLS §3).</strong> An <em>n</em>-player two-action <em>graphical game</em> (<em>G</em>, ℳ) is an undirected graph <em>G</em> plus one local game matrix <em>M<sub>i</sub></em> per player. <em>M<sub>i</sub></em> is indexed by the actions of the neighbourhood <em>N<sub>G</sub></em>(<em>i</em>), and that neighbourhood <strong>includes</strong> <em>i</em>. With |<em>N<sub>G</sub></em>(<em>i</em>)| ≤ <em>k</em>, each matrix has 2<sup><em>k</em></sup> entries instead of 2<sup><em>n</em></sup>. Actions are 0 and 1. A mixed strategy <em>p<sub>i</sub></em> ∈ [0,1] is the probability of playing <strong>action 0</strong>.</p>
+    <p><strong>TreeNash (KLS §4, Fig. 1).</strong> Pick a root. Each vertex <em>V</em> has one downstream neighbour <em>W</em> (its “child”, towards the root) and upstream “parents” <em>U</em><sub>1..k</sub>. On the <em>downstream pass</em>, <em>V</em> sends <em>W</em> a binary table <em>T</em>(<em>w</em>,<em>v</em>). An entry is 1 iff some Nash equilibrium of the subgame upstream of <em>V</em> (inclusive) has <em>V</em> = <em>v</em>, given <em>W</em> = <em>w</em>. That holds iff some <em>witness</em> <strong><em>u</em></strong> has <em>T</em>(<em>v</em>,<em>u<sub>i</sub></em>) = 1 for every parent and <em>v</em> is a best response to (<strong><em>u</em></strong>, <em>w</em>). On the <em>upstream pass</em>, the root picks a feasible value and each vertex tells its parents what to play, using a witness. By KLS Theorem 1, the tables and witnesses represent <em>all</em> Nash equilibria.</p>
+  </div>
+
+  <h2 id="setup">1 · Choose a game and a variant</h2>
+  <div class="controls" id="controls"></div>
+  <div id="bounds"></div>
+
+  <div class="cols">
+    <div>
+      <svg class="graph" id="graph" role="img" aria-label="Tree graphical game"></svg>
+      <div class="legend" id="graph-legend"></div>
+      <p class="small muted" id="source"></p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">2 · Downstream pass</h3>
+      <p class="small muted">Vertices are processed leaves-first (KLS step 2). Each arrow points from <em>V</em> to its child <em>W</em>, which is the direction of the message <em>T</em>(<em>w</em>,<em>v</em>).</p>
+      <div class="btnrow">
+        <button id="step" class="primary" type="button">Process next vertex</button>
+        <button id="runall" type="button">Run whole pass</button>
+        <button id="reset" type="button">Reset</button>
+      </div>
+      <dl class="kv" id="progress"></dl>
+      <h3>3 · Upstream pass</h3>
+      <div id="upstream-controls" class="controls"></div>
+      <div id="upstream-log" class="log" aria-live="polite">Finish the downstream pass first.</div>
+    </div>
+  </div>
+
+  <h2 id="tables">4 · Tables sent downstream</h2>
+  <div id="tables-intro" class="small muted"></div>
+  <div id="tables-out"></div>
+
+  <h2 id="result">5 · Recovered equilibrium and checks</h2>
+  <div id="result-out" class="muted">Run both passes to see the recovered strategy profile.</div>
+
+  <h2 id="fidelity">6 · What is from the paper, what is ours</h2>
+  <div id="fidelity-out"></div>
+  <div class="note warn" id="slide-note"></div>
+</main>
+<script type="module" src="js/treenash-page.js"></script>
+</body>
+</html>

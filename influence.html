@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Influence Games Demo</title>
+<meta name="description" content="Interactive linear influence games, PSNE enumeration and most influential nodes (Irfan & Ortiz, AAAI 2011).">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%230f6e6a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Influence games and the most influential nodes</h1>
+  <p class="lede">Irfan &amp; Ortiz, “A Game-Theoretic Approach to Influence in Networks”, <em>AAAI 2011</em> (IO below). You can build a linear influence game, enumerate its stable outcomes, and pick the nodes whose choices pin down a target outcome.</p>
+
+  <div class="note">
+    <p><strong>Model (IO Defs. 1 and 3).</strong> Each player chooses <em>x<sub>i</sub></em> ∈ {−1, +1} (reject / adopt). In a <em>linear influence game</em> (LIG) the influence on <em>i</em> is <em>f<sub>i</sub></em>(<em>x</em><sub>−<em>i</em></sub>) = Σ<sub><em>j</em>≠<em>i</em></sub> <em>w<sub>ji</sub></em> <em>x<sub>j</sub></em> − <em>b<sub>i</sub></em>, and the payoff is <em>u<sub>i</sub></em> = <em>x<sub>i</sub></em> <em>f<sub>i</sub></em>. Here <em>w<sub>ji</sub></em> is the influence of <em>j</em> on <em>i</em> (an arc <em>j</em> → <em>i</em>) and <em>b<sub>i</sub></em> is a threshold. The best response is +1 if <em>f<sub>i</sub></em> &gt; 0, −1 if <em>f<sub>i</sub></em> &lt; 0, and either if <em>f<sub>i</sub></em> = 0. Stable outcomes are the pure-strategy Nash equilibria (PSNE).</p>
+    <p><strong>Most influential set (IO Def. 2).</strong> Fix a desirable PSNE <em>x</em>* (goal <em>g</em>) and prefer small sets (<em>h</em>). A set <em>S</em> is most influential if <em>x</em>* is the <em>only</em> PSNE <em>x</em> with <em>x<sub>S</sub></em> = <em>x</em>*<sub><em>S</em></sub>, and no smaller set does the same.</p>
+  </div>
+
+  <div class="toc card"><strong>On this page</strong>
+    <ol>
+      <li><a href="#instance">Build or load an LIG</a></li>
+      <li><a href="#psne">Enumerate the PSNE</a></li>
+      <li><a href="#influence">Find the most influential nodes</a> (manual, greedy, exact)</li>
+      <li><a href="#special">Tractable special cases</a> (Thm 4, Prop 5, Thm 7)</li>
+      <li><a href="#hardness">Counting is #P-hard even on stars</a> (Thm 8(3))</li>
+      <li><a href="#experiment">Small replication of the random-LIG experiment</a></li>
+      <li><a href="#fidelity">What is from the paper, what is ours</a></li>
+    </ol>
+  </div>
+
+  <h2 id="instance">1 · The influence game</h2>
+  <div class="controls" id="controls"></div>
+  <div class="cols">
+    <div>
+      <svg class="graph" id="graph" role="img" aria-label="Influence graph"></svg>
+      <div class="legend">
+        <span style="--sw: var(--plus)">target action +1</span>
+        <span style="--sw: var(--minus)">target action −1</span>
+        <span style="--sw: var(--sel)">in S (click nodes to toggle)</span>
+        <span style="--sw: var(--pos-arc)">positive weight</span>
+        <span style="--sw: var(--neg-arc)">negative weight (dashed)</span>
+      </div>
+      <p class="small muted" id="source"></p>
+    </div>
+    <div>
+      <details class="card" id="editor-box">
+        <summary><strong>Edit as text</strong> <span class="small muted">(1-based ids)</span></summary>
+        <textarea id="editor" spellcheck="false" aria-label="LIG definition"></textarea>
+        <div class="btnrow"><button id="apply" class="primary" type="button">Apply</button></div>
+        <div id="editor-err" class="err"></div>
+      </details>
+      <div class="card" style="margin-top:12px">
+        <dl class="kv" id="facts"></dl>
+      </div>
+    </div>
+  </div>
+
+  <h2 id="psne">2 · Stable outcomes (PSNE)</h2>
+  <div class="controls" id="psne-controls"></div>
+  <div id="psne-summary"></div>
+  <p class="small muted">Rows are PSNE, columns are players; filled = +1, grey = −1, as in IO Fig. 1(b). <strong>Click a row to make it the target <em>x</em>*.</strong> Rows inconsistent with the current <em>S</em> are struck through.</p>
+  <div class="scroll-y" id="psne-table"></div>
+
+  <h2 id="influence">3 · Most influential nodes for the target</h2>
+  <div class="cols">
+    <div class="card">
+      <h3 style="margin-top:0">Manual: choose S</h3>
+      <p class="small">Click nodes in the graph (or the column headers) to add or remove them from <em>S</em>.</p>
+      <div id="manual-out"></div>
+      <div class="btnrow"><button type="button" id="clearS">Clear S</button></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Greedy (IO) vs exact</h3>
+      <p class="small">IO show the problem is equivalent to minimum hitting set (Thm 10). Each other PSNE <em>y</em> contributes the set of players where <em>y</em> differs from <em>x</em>*, and <em>S</em> must hit all of them. The greedy rule repeatedly picks the player whose target action is shared by the fewest remaining PSNE. That gives a (1 + log <em>h</em>) approximation, with <em>h</em> the number of PSNE.</p>
+      <div class="btnrow">
+        <button type="button" id="greedy-step" class="primary">Greedy: next step</button>
+        <button type="button" id="greedy-run">Run greedy</button>
+        <button type="button" id="exact">Exact optimum</button>
+      </div>
+      <div id="greedy-out"></div>
+      <div id="exact-out"></div>
+    </div>
+  </div>
+
+  <h2 id="special">4 · Tractable special cases</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Thm 4: non-negative influences</h3>
+      <p class="small">With all <em>w<sub>ji</sub></em> ≥ 0 the game is supermodular. Start from all −1 and let every player with <em>f<sub>i</sub></em> &gt; 0 switch. Nobody ever wants to switch back, so a PSNE is reached within <em>n</em> rounds. Try the “slide 60” preset.</p>
+      <div class="btnrow"><button type="button" id="brd" class="primary">Run best-response dynamics</button></div>
+      <div id="brd-out" class="small"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Prop 5: symmetric influences</h3>
+      <p class="small">If <em>w<sub>ij</sub></em> = <em>w<sub>ji</sub></em>, then Φ(<em>x</em>) = Σ<sub><em>t</em></sub> <em>x<sub>t</sub></em>(Σ<sub><em>i</em>≠<em>t</em></sub> <em>x<sub>i</sub></em><em>w<sub>it</sub></em>/2 − <em>b<sub>t</sub></em>) is an exact potential, so a PSNE exists. With all thresholds 0 this is a party-affiliation game, and finding a PSNE is PLS-complete (Fabrikant et al. 2004).</p>
+      <div id="potential-out" class="small"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin-top:0">Thm 7: TreeNash for LIGs on trees in O(<em>nd</em>)</h3>
+    <p class="small">For an LIG whose underlying graph is a tree, IO compute each downstream table entry from one linear inequality. For each own action <em>x<sub>i</sub></em>, a parent with exactly one feasible action <em>x̂<sub>k</sub></em> goes into Pa₁ and contributes <em>x̂<sub>k</sub>w<sub>ki</sub></em>. A parent with both actions feasible goes into Pa₂ and is set to the action that helps <em>i</em> most, contributing |<em>w<sub>ti</sub></em>|. The entry is 1 iff
+      <span class="mono">x<sub>i</sub>(x<sub>j</sub>w<sub>ji</sub> + Σ<sub>Pa₁</sub> x̂<sub>k</sub>w<sub>ki</sub> − b<sub>i</sub>) + Σ<sub>Pa₂</sub>|w<sub>ti</sub>| ≥ 0</span>.
+      Below, these tables are compared entry by entry with generic pure-strategy TreeNash (Demo 1), which tries every parent action combination.</p>
+    <div class="controls" id="t7-controls"></div>
+    <div id="t7-out"></div>
+  </div>
+
+  <h2 id="hardness">5 · Counting PSNE is #P-complete, even on a star (Thm 8(3))</h2>
+  <p>IO reduce #KNAPSACK to counting PSNE. The construction is a star with actions {0, 1}, as in their proof. The centre <em>v</em>₀ influences every leaf with weight 1, leaf <em>i</em> influences the centre with weight −<em>a<sub>i</sub></em>, the centre's threshold is −<em>W</em>, and every leaf's threshold is 1. In every PSNE the centre plays 1, the leaves are indifferent, and the centre's best response holds iff Σ<em>a<sub>i</sub>x<sub>i</sub></em> ≤ <em>W</em>. So the PSNE are exactly the feasible knapsack subsets.</p>
+  <div class="controls" id="ks-controls"></div>
+  <div id="ks-out"></div>
+
+  <h2 id="experiment">6 · Replicating the random-LIG experiment at small scale</h2>
+  <p>IO's setup: 25 nodes, each ordered pair an arc with probability 0.5, each weight −1 with “flip probability” <em>p</em> (else +1), and 100 graphs per <em>p</em>. They report that the number of PSNE grows as negative weights dominate (Fig. 3; about 200 PSNE on average at <em>p</em> = 1, read from the plot). For all-negative games, greedy is within optimum + 1 in 87% of trials and within + 2 in 99%. Our rerun uses the backtracking search described above (without NashProp). It runs in a background thread in your browser.</p>
+  <div class="note warn small"><p><strong>Assumptions we had to make.</strong> IO do not state, for this family: (i) the thresholds, so we use <em>b<sub>i</sub></em> = 0, as in their preferential-attachment experiment; (ii) which PSNE is the target, so we draw one uniformly at random per graph; (iii) the greedy tie-breaking rule, so we use lowest index; (iv) how the confidence intervals are computed, so we use mean ± 1.96·sd/√<em>m</em>. Graphs without a PSNE are skipped for the influence statistics. The numbers will therefore not match the paper exactly.</p></div>
+  <div class="controls" id="exp-controls"></div>
+  <progress id="exp-progress" value="0" max="1" hidden></progress>
+  <div id="exp-out"></div>
+
+  <h2 id="fidelity">7 · What is from the paper, what is ours</h2>
+  <div id="fidelity-out"></div>
+</main>
+<script type="module" src="js/influence-page.js"></script>
+</body>
+</html>
