@@ -19,6 +19,7 @@ const state = {
   preset: "irfan", mode: "pure", eps: 0.05, tauMode: "ortiz", manualN: 10, n: 7, seed: 1,
   root: null, step: 0, witnessMode: "first", witnessSeed: 1,
   preset_obj: null, game: null, result: null, up: null, error: null,
+  N: 1, epsUsed: 0, work: 0, ms: 0, rootChoice: undefined,
 };
 
 // ---------------------------------------------------------------- controls
@@ -78,7 +79,10 @@ function rebuild() {
   state.epsUsed = eps;
   state.result = null;
   if (work > MAX_WORK) {
-    state.error = `This grid would need roughly ${work.toExponential(1)} elementary operations, which is too slow for a browser demo. The cost grows like (N + 1)^(parents + 1) at each vertex, so try rooting the tree at a leaf (every vertex then has at most degree − 1 parents), lowering N, or raising ε.`;
+    let worst = 0;
+    for (let v = 1; v < state.game.n; v++) if (or.ups[v].length > or.ups[worst].length) worst = v;
+    const m = or.ups[worst].length;
+    state.error = `With root ${state.game.labels[state.root]}, vertex ${state.game.labels[worst]} has ${m} parents, so computing its table means checking every combination of ${m} parent strategies on a ${G}-point grid: about ${G}^${m + 1} ≈ ${Math.pow(G, m + 1).toExponential(1)} cases, and roughly ${work.toExponential(1)} operations in total. That is too slow for a browser. This is the main cost driver of ApproximateTreeNash: it is exponential in the number of parents, so the choice of root matters. Choose a root that keeps every vertex's parent count small (a leaf root gives each vertex at most degree − 1 parents), or lower N, or raise ε.`;
   } else {
     const t0 = performance.now();
     state.result = treeNashTables(state.game, { root: state.root, N, eps });
